@@ -4,7 +4,7 @@ Bem-vindo ao repositório da Equipe 03 no DevTITANS. Neste repositório apresent
 
 ## Contribuidores
 
-<img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/imagens/Agata.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/imagens/Bianka.png" width="180" >
+<img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/imagens/Agata.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/imagens/new-card-bianka.png" width="180" >
 <img src="https://github.com/DevTITANS05/Hands-On-Linux-fork-/assets/21023906/85e61f3e-476c-47a4-82d5-4054e856c67b" width="180" >
 <img src="https://github.com/DevTITANS05/Hands-On-Linux-fork-/assets/21023906/85e61f3e-476c-47a4-82d5-4054e856c67b" width="180" >
 <img src="https://github.com/DevTITANS05/Hands-On-Linux-fork-/assets/21023906/85e61f3e-476c-47a4-82d5-4054e856c67b" width="180" >
