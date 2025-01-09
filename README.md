@@ -31,4 +31,14 @@ Os recursos necessários para desenvolvermos o protótipo foram os seguintes:
     
 ## Contato
 
-Para perguntas, sugestões ou feedback, entre em contato com o mantenedor do projeto em [maintainer@example.com](mailto:maintainer@example.com).
+Para perguntas, sugestões ou feedback, entre em contato com um dos mantenedores do projeto em: 
+- [Ágata](example@example.com)
+- [Bianka](bianka.vm03@gmail.com)
+- [Fernanda](example@example.com)
+- [Juan](example@example.com)
+- [Mateus](example@example.com)
+- [Jose](example@example.com)
+
+
+
+
