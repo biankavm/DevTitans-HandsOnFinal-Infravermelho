@@ -4,7 +4,7 @@ Bem-vindo ao repositório da Equipe 03 no DevTITANS. Neste repositório apresent
 
 ## Contribuidores
 
-<img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Agata.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Bianka.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Fernanda.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Juan.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Mateus.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Jose.png" width="180" >
+<img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Agata.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Bianka.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Mateus.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Fernanda.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Juan.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Jose.png" width="180" >
 
 
 - Ágata Brazão (Time de Protótipo e Firmware)
