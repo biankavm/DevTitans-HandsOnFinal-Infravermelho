@@ -1,140 +1,67 @@
-#include <IRremote.h>
+#include <IRRemoteESP32.h>
+#include <driver/ledc.h>
 
-int RECV_PIN = 18;  // Pino de recepção do IR no ESP32 (pode ser alterado)
-int BUTTON_PIN = 19;  // Pino do botão (pode ser alterado)
+#define RECV_PIN 19    // GPIO para receber sinais IR
+#define SEND_PIN 18     // GPIO para enviar sinais IR
+#define BUTTON_PIN 23   // GPIO do botão para envio
+#define CARRIER_FREQ 38000 // Frequência de 38kHz (padrão IR)
 
-IRrecv irrecv(RECV_PIN);
-IRsend irsend;
+IRRemoteESP32 irRemote(RECV_PIN);
 
-decode_results results;
+// Variável para armazenar o código IR recebido
+int lastCode = -1;
 
 void setup() {
-  Serial.begin(115200);  // Aumentar a velocidade da porta serial no ESP32
-  irrecv.enableIRIn(); // Inicia o receptor
-  pinMode(BUTTON_PIN, INPUT);
+    Serial.begin(115200);
+
+    // Inicializa o receptor IR
+    irRemote = IRRemoteESP32(RECV_PIN);
+    pinMode(BUTTON_PIN, INPUT_PULLUP); // Configura o botão como entrada com pull-up
+
+    // Configura o GPIO de envio
+    ledcSetup(0, CARRIER_FREQ, 10); // Canal 0, 38kHz, resolução de 10 bits
+    ledcAttachPin(SEND_PIN, 0);
+
+    Serial.println("Configuração concluída.");
 }
-
-// Armazenamento do código recebido
-int codeType = -1; // O tipo de código
-unsigned long codeValue; // O valor do código, se não for raw
-unsigned int rawCodes[RAWBUF]; // As durações, se for raw
-int codeLen; // O comprimento do código
-int toggle = 0; // Estado de alternância RC5/6
-
-// Armazenar o código para reprodução posterior
-void storeCode(decode_results *results) {
-  codeType = results->decode_type;
-  int count = results->rawlen;
-  if (codeType == UNKNOWN) {
-    Serial.println("Received unknown code, saving as raw");
-    codeLen = results->rawlen - 1;
-    // Armazenando códigos raw:
-    // Ignorar o primeiro valor (gap)
-    // Converter de ticks para microssegundos
-    // Ajustar os marks e spaces para compensar a distorção do receptor IR
-    for (int i = 1; i <= codeLen; i++) {       
-      if (i % 2) {         // Mark
-        rawCodes[i - 1] = results->rawbuf[i] * USECPERTICK - MARK_EXCESS;
-        Serial.print(" m");
-      } 
-      else {  // Space
-        rawCodes[i - 1] = results->rawbuf[i] * USECPERTICK + MARK_EXCESS;
-        Serial.print(" s");
-      }
-      Serial.print(rawCodes[i - 1], DEC);
-    }
-    Serial.println("");
-  }
-  else {
-    if (codeType == NEC) {
-      Serial.print("Received NEC: ");
-      if (results->value == REPEAT) {
-        // Não gravar um valor de repetição NEC
-        Serial.println("repeat; ignoring.");
-        return;
-      }
-    } 
-    else if (codeType == SONY) {
-      Serial.print("Received SONY: ");
-    } 
-    else if (codeType == RC5) {
-      Serial.print("Received RC5: ");
-    } 
-    else if (codeType == RC6) {
-      Serial.print("Received RC6: ");
-    } 
-    else {
-      Serial.print("Unexpected codeType ");
-      Serial.print(codeType, DEC);
-      Serial.println("");
-    }
-    Serial.println(results->value, HEX);
-    codeValue = results->value;
-    codeLen = results->bits;
-  }
-}
-
-void sendCode(int repeat) {
-  if (codeType == NEC) {
-    if (repeat) {
-      irsend.sendNEC(REPEAT, codeLen);
-      Serial.println("Sent NEC repeat");
-    } 
-    else {
-      irsend.sendNEC(codeValue, codeLen);
-      Serial.print("Sent NEC ");
-      Serial.println(codeValue, HEX);
-    }
-  } 
-  else if (codeType == SONY) {
-    irsend.sendSony(codeValue, codeLen);
-    Serial.print("Sent Sony ");
-    Serial.println(codeValue, HEX);
-  } 
-  else if (codeType == RC5 || codeType == RC6) {
-    if (!repeat) {
-      // Alterna o bit de toggle para uma nova pressão de botão
-      toggle = 1 - toggle;
-    }
-    // Coloca o bit de toggle no código a ser enviado
-    codeValue = codeValue & ~(1 << (codeLen - 1));
-    codeValue = codeValue | (toggle << (codeLen - 1));
-    if (codeType == RC5) {
-      Serial.print("Sent RC5 ");
-      Serial.println(codeValue, HEX);
-      irsend.sendRC5(codeValue, codeLen);
-    } 
-    else {
-      irsend.sendRC6(codeValue, codeLen);
-      Serial.print("Sent RC6 ");
-      Serial.println(codeValue, HEX);
-    }
-  } 
-  else {
-    // Assume 38 KHz
-    irsend.sendRaw(rawCodes, codeLen, 38);
-    Serial.println("Sent raw");
-  }
-}
-
-int lastButtonState;
 
 void loop() {
-  // Se o botão for pressionado, enviar o código.
-  int buttonState = digitalRead(BUTTON_PIN);
-  if (lastButtonState == HIGH && buttonState == LOW) {
-    Serial.println("Released");
-    irrecv.enableIRIn(); // Reabilitar receptor
-  }
+    // Verifica se foi recebido um código IR
+    int result = irRemote.checkRemote();
+    if (result != -1) {
+        lastCode = result; // Armazena o último código recebido
+        Serial.printf("Código IR recebido: %d\n", lastCode);
+    }
 
-  if (buttonState) {
-    Serial.println("Pressed, sending");    
-    sendCode(lastButtonState == buttonState);
-    delay(50); // Aguardar um pouco entre as retransmissões
-  } 
-  else if (irrecv.decode(&results)) {
-    storeCode(&results);
-    irrecv.resume(); // Retomar o receptor
-  }
-  lastButtonState = buttonState;
+    // Verifica se o botão foi pressionado
+    if (digitalRead(BUTTON_PIN) == LOW) {
+        if (lastCode != -1) {
+            Serial.println("Enviando código IR...");
+            sendIRSignal(lastCode);
+        } else {
+            Serial.println("Nenhum código IR armazenado para enviar.");
+        }
+        delay(500); // Anti-bounce para o botão
+    }
+}
+
+// Função para enviar o sinal IR armazenado
+void sendIRSignal(int code) {
+    for (int i = 0; i < 32; i++) { // Supondo 32 bits para um código NEC
+        if (code & (1 << (31 - i))) {
+            // Envia "1" como pulso ON seguido de OFF
+            ledcWrite(0, 512); // Pulso ON (50% duty cycle)
+            delayMicroseconds(560); // Marca
+            ledcWrite(0, 0);        // Pulso OFF
+            delayMicroseconds(1690); // Espaço
+        } else {
+            // Envia "0" como pulso ON seguido de OFF
+            ledcWrite(0, 512); // Pulso ON (50% duty cycle)
+            delayMicroseconds(560); // Marca
+            ledcWrite(0, 0);        // Pulso OFF
+            delayMicroseconds(560);  // Espaço
+        }
+    }
+    // Encerra o envio com um sinal OFF
+    ledcWrite(0, 0);
 }
