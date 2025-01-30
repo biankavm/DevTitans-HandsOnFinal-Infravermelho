@@ -90,51 +90,69 @@ static int usb_write_serial(const char *cmd) {
     return ret;
 }
 
-static int usb_read_serial(char *response, size_t size) {
+
+// TODO
+// static int usb_read_serial(char *response, size_t size) {
     
-    int ret, actual_size, attempts = 0;
-    char full_response[MAX_RECV_LINE] = {0};
-    char *newline_ptr, *start_ptr;
-
-    while (attempts < 50) {
-        ret = usb_bulk_msg(smartinfrared_device, usb_rcvbulkpipe(smartinfrared_device, usb_in),
-                           usb_in_buffer, usb_max_size, &actual_size, 5000);
-        if (ret) {
-            printk(KERN_INFO "SmartInfrared: Dados que deram errado: %s\n", usb_in_buffer);
-
-            printk(KERN_ERR "SmartInfrared: Falha ao ler resposta. Código: %d\n", ret);
-            return -1;
-        }
-
-        usb_in_buffer[actual_size] = '\0';
-        strncat(full_response, usb_in_buffer, sizeof(full_response) - strlen(full_response) - 1);
-
-        newline_ptr = strchr(full_response, '\n');
-       if (newline_ptr) {
-            *newline_ptr = '\0';
-            if (strncmp(full_response, "RECV_", 5) == 0 || strncmp(full_response, "SEND_", 5) == 0) {
-                snprintf(response, size, "%s", full_response);
-                return 0;
-            } else {
-                printk(KERN_INFO "SmartInfrared: Resposta parcial ou inválida: %s\n", full_response);
-                memset(full_response, 0, sizeof(full_response));
-                continue;
-            }
-}
+//     int ret, actual_size, attempts = 0;
+//     char full_response[MAX_RECV_LINE] = {0};
+//     char *newline_ptr, *start_ptr;
 
 
-        attempts++;
-    }
+//     while (attempts < 50) {
+//         ret = usb_bulk_msg(smartinfrared_device, usb_rcvbulkpipe(smartinfrared_device, usb_in),
+//                            usb_in_buffer, usb_max_size, &actual_size, 5000);
 
-    printk(KERN_ERR "SmartInfrared: Falha ao ler resposta após várias tentativas.\n");
-    return -1;
-}
+//         printk(KERN_INFO "SmartInfrared: Valor de actual size: %d\n", actual_size);   
+
+//         int i;
+//         int tam = 0;
+//         char aux[MAX_RECV_LINE];
+
+//         for (i = 0; i < actual_size; i++) {
+       
+//         if (usb_in_buffer[i] == '\n') {
+//             printk(KERN_INFO "SmartInfrared: Recebida uma linha inteira %s\n", usb_in_buffer);
+//             return 0;
+//         }
+
+//         if (tam < MAX_RECV_LINE - 1) { 
+//             printk(KERN_INFO "SmartInfrared: Aumentando o valor de aux %s\n", aux);
+//             aux[tam] = usb_in_buffer[i];
+//             tam++;
+//             // aux[tam] = '\0'; 
+//         } else {
+//             printk(KERN_WARNING "SmartInfrared: Buffer de recepção cheio, descartando dados\n");
+//         }
+
+//         printk(KERN_INFO "SmartInfrared: Usb in buffer: %c\n", usb_in_buffer[i]);
+//     }
+//         if (ret) {
+//             printk(KERN_INFO "SmartInfrared: Dados que deram errado: %s\n", usb_in_buffer);
+
+//             printk(KERN_ERR "SmartInfrared: Falha ao ler resposta. Código: %d\n", ret);
+//             attempts++;
+
+//             return -1;
+//         }
+
+// }
+//             return -1;
+
+// }
 
 static ssize_t attr_show(struct kobject *sys_obj, struct kobj_attribute *attr, char *buff) {
     char response[MAX_RECV_LINE];
     if (usb_write_serial("RECV") < 0 || usb_read_serial(response, sizeof(response)) < 0) {
         return -EIO;
+
+
+
     }
+    // if (usb_write_serial("RECV")) {
+    //     return -EIO;
+    // }
+    // usb_read_serial(response, sizeof(response));
     return scnprintf(buff, PAGE_SIZE, "%s\n", response);
 }
 
