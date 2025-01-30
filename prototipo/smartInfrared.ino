@@ -79,7 +79,7 @@ void processSerialCommand() {
             }
             
             if (!rawValues.empty()) {
-              Serial.println(freq);
+              //Serial.println(freq);
               IrSender.sendRaw(rawValues.data(), rawValues.size(), freq);
             }
             Serial.println("SEND_OK");
