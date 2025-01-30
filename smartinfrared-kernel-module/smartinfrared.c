@@ -96,11 +96,12 @@ static int usb_read_serial(char *response, size_t size) {
     int ret, actual_size;
     int attempts = 0;
     char full_response[MAX_RECV_LINE] = {0};
-    char *newline_ptr = NULL, *start_ptr = NULL;
+    char *newline_ptr = NULL;
+    char *start_ptr = NULL;
 
     while (attempts < 50) {
         ret = usb_bulk_msg(smartinfrared_device, usb_rcvbulkpipe(smartinfrared_device, usb_in),
-                           usb_in_buffer, usb_max_size, &actual_size, 3000); 
+                           usb_in_buffer, usb_max_size, &actual_size, 5000);
 
         if (ret) {
             printk(KERN_ERR "SmartInfrared: Falha ao ler resposta. Código: %d\n", ret);
@@ -111,21 +112,8 @@ static int usb_read_serial(char *response, size_t size) {
         usb_in_buffer[actual_size] = '\0';
         strncat(full_response, usb_in_buffer, sizeof(full_response) - strlen(full_response) - 1);
 
-        printk(KERN_INFO "SmartInfrared: Dados recebidos: -%s-\n", usb_in_buffer);
+        printk(KERN_INFO "SmartInfrared: Dados recebidos: %s\n", usb_in_buffer);
         printk(KERN_INFO "SmartInfrared: Dados acumulados: %s\n", full_response);
-
-        // se achar um '\n', então processa a linha completa
-        newline_ptr = strchr(full_response, '\n');
-        if (newline_ptr) {
-            *newline_ptr = '\0'; 
-
-            printk(KERN_INFO "SmartInfrared: Recebida uma linha inteira: %s\n", full_response);
-
-            // copia a resposta para o buffer do usuário
-            snprintf(response, size, "%s", full_response);
-
-            return 0; // deu certo
-        }
 
         // se ainda não encontrou o início da resposta válida, procura por "RECV_" ou "SEND_"
         if (!start_ptr) {
@@ -133,13 +121,22 @@ static int usb_read_serial(char *response, size_t size) {
             if (!start_ptr) {
                 start_ptr = strstr(full_response, "SEND_");
             }
+        }
 
-            // aumentar attempts só se o início da resposta válida não foi encontrado
-            if (!start_ptr) {
-                attempts++;
-                printk(KERN_INFO "SmartInfrared: Nenhuma resposta válida encontrada. Tentativa: %d\n", attempts);
-                continue; //  tentando de novo
+        // se achar um '\n', então processa a linha completa
+        newline_ptr = strchr(full_response, '\n');
+        if (newline_ptr) {
+            *newline_ptr = '\0'; // Finaliza a string no '\n'
+
+            if (start_ptr) {
+                printk(KERN_INFO "SmartInfrared: Resposta processada: %s\n", start_ptr);
+                snprintf(response, size, "%s", start_ptr);
+            } else {
+                printk(KERN_INFO "SmartInfrared: Nenhum identificador 'RECV_' ou 'SEND_' encontrado.\n");
+                snprintf(response, size, "%s", full_response);
             }
+
+            return 0; // deu certo
         }
 
         printk(KERN_INFO "SmartInfrared: Resposta parcial acumulada: %s\n", full_response);
@@ -153,9 +150,6 @@ static ssize_t attr_show(struct kobject *sys_obj, struct kobj_attribute *attr, c
     char response[MAX_RECV_LINE];
     if (usb_write_serial("RECV") < 0 || usb_read_serial(response, sizeof(response)) < 0) {
         return -EIO;
-
-
-
     }
     return scnprintf(buff, PAGE_SIZE, "%s\n", response);
 }
