@@ -142,7 +142,6 @@ static int usb_probe(struct usb_interface *interface, const struct usb_device_id
     return 0;
 
     error:
-    /* Libera recursos no caso de erro */
     kfree(usb_in_buffer);
     kfree(usb_out_buffer);
     return ret;
@@ -260,7 +259,6 @@ static ssize_t attr_store(struct kobject *sys_obj, struct kobj_attribute *attr, 
 
 static int cp210x_ifc_enable(struct usb_device *udev, u16 ifnum)
 {
-    /* Habilita a interface UART (IFC_ENABLE) */
     return usb_control_msg(udev,
                            usb_sndctrlpipe(udev, 0),
                            CP210X_IFC_ENABLE,
