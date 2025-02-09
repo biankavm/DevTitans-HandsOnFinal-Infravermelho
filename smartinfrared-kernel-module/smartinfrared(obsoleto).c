@@ -25,6 +25,7 @@
 
 #define BITS_DATA_8       0x0800  
 
+/* tam do buffer  */
 #define MAX_RECV_LINE 800
 
 static struct usb_device *smartinfrared_device;
@@ -79,88 +80,53 @@ MODULE_LICENSE("GPL");
 
 static int usb_probe(struct usb_interface *interface, const struct usb_device_id *id) {
     struct usb_endpoint_descriptor *usb_endpoint_in, *usb_endpoint_out;
-    int ret;
-    u16 ifnum;
+
     printk(KERN_INFO "SmartInfrared: Dispositivo conectado ...\n");
-    
+
     sys_obj = kobject_create_and_add("smartInfrared", kernel_kobj);
     if (!sys_obj || sysfs_create_group(sys_obj, &attr_group)) {
-        kobject_put(sys_obj);
+        kobject_put(sys_obj); 
         printk(KERN_ERR "SmartInfrared: Falha ao criar arquivos no SysFs\n");
         return -ENOMEM;
     }
 
     smartinfrared_device = interface_to_usbdev(interface);
-
-    ifnum = interface->cur_altsetting->desc.bInterfaceNumber;
-
-    if (usb_find_common_endpoints(interface->cur_altsetting,
-                                  &usb_endpoint_in, &usb_endpoint_out,
-                                  NULL, NULL)) {
+    if (usb_find_common_endpoints(interface->cur_altsetting, &usb_endpoint_in, &usb_endpoint_out, NULL, NULL)) {
         printk(KERN_ERR "SmartInfrared: Falha ao localizar endpoints USB\n");
+        kobject_put(sys_obj);   
         return -ENODEV;
     }
 
+    usb_max_size = usb_endpoint_maxp(usb_endpoint_in);
     usb_in = usb_endpoint_in->bEndpointAddress;
     usb_out = usb_endpoint_out->bEndpointAddress;
-    usb_max_size = usb_endpoint_maxp(usb_endpoint_in);
 
     usb_in_buffer = kmalloc(usb_max_size, GFP_KERNEL);
     usb_out_buffer = kmalloc(usb_max_size, GFP_KERNEL);
     if (!usb_in_buffer || !usb_out_buffer) {
         printk(KERN_ERR "SmartInfrared: Falha ao alocar buffers\n");
+        kobject_put(sys_obj);  
+        kfree(usb_in_buffer);
+        kfree(usb_out_buffer);
         return -ENOMEM;
     }
 
-   
-    ret = cp210x_ifc_enable(smartinfrared_device, ifnum);
-    if (ret < 0) {
-        printk(KERN_ERR "SmartInfrared: cp210x_ifc_enable falhou: %d\n", ret);
-        goto error;
-    }
-
-    ret = cp210x_set_line_ctl(smartinfrared_device, ifnum, BITS_DATA_8 /*0x0800*/);
-    if (ret < 0) {
-        printk(KERN_ERR "SmartInfrared: set_line_ctl falhou: %d\n", ret);
-        goto error;
-    }
-
-    ret = cp210x_set_baudrate(smartinfrared_device, ifnum, 115200);
-    if (ret < 0) {
-        printk(KERN_ERR "SmartInfrared: set_baudrate falhou: %d\n", ret);
-        goto error;
-    }
-
-    ret = cp210x_set_mhs(smartinfrared_device, ifnum, CONTROL_DTR_RTS);
-    if (ret < 0) {
-        printk(KERN_ERR "SmartInfrared: set_mhs falhou: %d\n", ret);
-        goto error;
-    }
-
-    printk(KERN_INFO "SmartInfrared: CP2102 UART configurado (8N1, baud=115200, DTR/RTS).\n");
-
-    return 0;
-
-    error:
-    /* Libera recursos no caso de erro */
-    kfree(usb_in_buffer);
-    kfree(usb_out_buffer);
-    return ret;
+    return 0;  
 }
-
 
 static void usb_disconnect(struct usb_interface *interface) {
     printk(KERN_INFO "SmartInfrared: Dispositivo desconectado.\n");
 
-    
-
-    if (sys_obj)
+    if (sys_obj) {
         kobject_put(sys_obj);
-
+        sys_obj = NULL;  
+    }
 
     kfree(usb_in_buffer);
     kfree(usb_out_buffer);
 }
+
+
 
 static int usb_write_serial(const char *cmd) {
     int ret, actual_size;
@@ -182,38 +148,42 @@ static int usb_read_serial(char *response, size_t size) {
     char full_response[MAX_RECV_LINE] = {0};
     char *newline_ptr = NULL, *start_ptr = NULL;
 
-    while (attempts < 30) {
+    while (attempts < 50) {
         ret = usb_bulk_msg(smartinfrared_device, usb_rcvbulkpipe(smartinfrared_device, usb_in),
-                           usb_in_buffer, usb_max_size, &actual_size, 3000);
+                           usb_in_buffer, usb_max_size, &actual_size, 3000); // Timeout de 2 segundos
         if (ret) {
             printk(KERN_ERR "SmartInfrared: Falha ao ler resposta. Código: %d\n", ret);
             return -1;
         }
 
+        // finaliza a string recebida e acumula no buffer
         usb_in_buffer[actual_size] = '\0';
         strncat(full_response, usb_in_buffer, sizeof(full_response) - strlen(full_response) - 1);
 
         printk(KERN_INFO "SmartInfrared: Dados recebidos: %s\n", usb_in_buffer);
         printk(KERN_INFO "SmartInfrared: Dados acumulados: %s\n", full_response);
 
+        // se ainda não achou o início da resposta válida, procura por "RECV_" ou "SEND_"
         if (!start_ptr) {
             start_ptr = strstr(full_response, "RECV_");
             if (!start_ptr) {
                 start_ptr = strstr(full_response, "SEND_");
             }
 
+            // aumenta attempts apenas se o início da resposta válida não foi encontrado
             if (!start_ptr) {
                 attempts++;
                 printk(KERN_INFO "SmartInfrared: Nenhuma resposta válida encontrada. Tentativa: %d\n", attempts);
-                continue; 
+                continue; // passa para a próxima iteração do loop
             }
         }
 
+        // checa se a resposta completa foi recebida (terminada com '\n')
         newline_ptr = strchr(start_ptr, '\n');
         if (newline_ptr) {
-            *newline_ptr = '\0'; 
+            *newline_ptr = '\0'; // fim da string na posição do '\n'
             snprintf(response, size, "%s", start_ptr);
-            return 0; 
+            return 0; // deu certo
         }
 
         printk(KERN_INFO "SmartInfrared: Resposta parcial acumulada: %s\n", full_response);
@@ -225,11 +195,16 @@ static int usb_read_serial(char *response, size_t size) {
 
 
 
-static ssize_t attr_show(struct kobject *sys_obj, struct kobj_attribute *attr, char *buff) {
+
+
+static ssize_t attr_show(struct kobject *sys_obj, struct kobj_attribute *attr, char *buff)
+{
     char response[MAX_RECV_LINE]; 
+    /* solicita sinal IR */
     if (usb_write_serial("RECV") < 0 || usb_read_serial(response, sizeof(response)) < 0) {
         return -EIO;
     }
+    /* format: RECV_<freq>,<valor1>,<valor2>,...,<valorN> */
     return scnprintf(buff, PAGE_SIZE, "%s\n", response);
 }
 
@@ -256,59 +231,4 @@ static ssize_t attr_store(struct kobject *sys_obj, struct kobj_attribute *attr, 
     printk(KERN_INFO "SmartInfrared: Resposta do dispositivo: %s\n", response);
     
     return count;
-}
-
-static int cp210x_ifc_enable(struct usb_device *udev, u16 ifnum)
-{
-    /* Habilita a interface UART (IFC_ENABLE) */
-    return usb_control_msg(udev,
-                           usb_sndctrlpipe(udev, 0),
-                           CP210X_IFC_ENABLE,
-                           REQTYPE_HOST_TO_INTERFACE,
-                           UART_ENABLE,     
-                           ifnum,           
-                           NULL, 0,
-                           1000);
-}
-
-static int cp210x_set_line_ctl(struct usb_device *udev, u16 ifnum, u16 line_ctl)
-{
-    return usb_control_msg(udev,
-                           usb_sndctrlpipe(udev, 0),
-                           CP210X_SET_LINE_CTL,
-                           REQTYPE_HOST_TO_INTERFACE,
-                           line_ctl,
-                           ifnum,
-                           NULL, 0,
-                           1000);
-}
-
-static int cp210x_set_mhs(struct usb_device *udev, u16 ifnum, u16 control)
-{
-    return usb_control_msg(udev,
-                           usb_sndctrlpipe(udev, 0),
-                           CP210X_SET_MHS,
-                           REQTYPE_HOST_TO_INTERFACE,
-                           control,
-                           ifnum,
-                           NULL, 0,
-                           1000);
-}
-
-
-static int cp210x_set_baudrate(struct usb_device *udev, u16 ifnum, u32 baud)
-{
-    __le32 rate = cpu_to_le32(baud);
-    int ret;
-
-    ret = usb_control_msg(udev,
-                          usb_sndctrlpipe(udev, 0),
-                          CP210X_SET_BAUDRATE,
-                          REQTYPE_HOST_TO_INTERFACE,
-                          0,               
-                          ifnum,           
-                          &rate,           
-                          sizeof(rate),
-                          1000);
-    return ret;
 }
