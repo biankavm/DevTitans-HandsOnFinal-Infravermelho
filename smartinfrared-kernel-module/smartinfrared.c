@@ -25,7 +25,7 @@
 
 #define BITS_DATA_8       0x0800  
 
-#define MAX_RECV_LINE 800
+#define MAX_RECV_LINE 1000
 
 static struct usb_device *smartinfrared_device;
 static uint usb_in, usb_out;
@@ -105,8 +105,10 @@ static int usb_probe(struct usb_interface *interface, const struct usb_device_id
     usb_out = usb_endpoint_out->bEndpointAddress;
     usb_max_size = usb_endpoint_maxp(usb_endpoint_in);
 
-    usb_in_buffer = kmalloc(usb_max_size, GFP_KERNEL);
-    usb_out_buffer = kmalloc(usb_max_size, GFP_KERNEL);
+    usb_in_buffer = kmalloc(MAX_RECV_LINE, GFP_KERNEL);
+    usb_out_buffer = kmalloc(MAX_RECV_LINE, GFP_KERNEL);
+
+
     if (!usb_in_buffer || !usb_out_buffer) {
         printk(KERN_ERR "SmartInfrared: Falha ao alocar buffers\n");
         return -ENOMEM;
@@ -165,7 +167,7 @@ static int usb_write_serial(const char *cmd) {
     int ret, actual_size;
     printk(KERN_INFO "SmartInfrared: Enviando comando: %s\n", cmd);
 
-    snprintf(usb_out_buffer, usb_max_size, "%s", cmd);
+    snprintf(usb_out_buffer, MAX_RECV_LINE, "%s\n", cmd);
     ret = usb_bulk_msg(smartinfrared_device, usb_sndbulkpipe(smartinfrared_device, usb_out),
                        usb_out_buffer, strlen(usb_out_buffer), &actual_size, 1000);
     if (ret) {
@@ -256,6 +258,9 @@ static ssize_t attr_store(struct kobject *sys_obj, struct kobj_attribute *attr, 
     
     return count;
 }
+
+
+
 
 static int cp210x_ifc_enable(struct usb_device *udev, u16 ifnum)
 {
