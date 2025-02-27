@@ -152,11 +152,14 @@ static int usb_read_serial(char *response, size_t size) {
         }
 
         newline_ptr = strchr(start_ptr, '\n');
-        if (newline_ptr) {
-            *newline_ptr = '\0'; 
+       if (newline_ptr) {
+            *newline_ptr = '\0';
+            if (strncmp(start_ptr, "RECV_", 5) == 0)
+                start_ptr += 5;
             snprintf(response, size, "%s", start_ptr);
-            return 0; 
-        }
+            return 0;
+}
+
 
         printk(KERN_INFO "SmartInfrared: Resposta parcial acumulada: %s\n", full_response);
     }
