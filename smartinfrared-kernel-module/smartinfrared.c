@@ -9,22 +9,6 @@
 #define VENDOR_ID   0x10c4
 #define PRODUCT_ID  0xea60
 
-#define CP210X_IFC_ENABLE     0x00
-#define CP210X_SET_BAUDRATE   0x1E
-#define CP210X_SET_LINE_CTL   0x03
-#define CP210X_SET_MHS        0x07
-
-#define REQTYPE_HOST_TO_INTERFACE (USB_TYPE_VENDOR | USB_RECIP_INTERFACE | USB_DIR_OUT)
-
-#define UART_ENABLE       0x0001
-#define UART_DISABLE      0x0000
-
-#define CONTROL_DTR       0x0001
-#define CONTROL_RTS       0x0002
-#define CONTROL_DTR_RTS   (CONTROL_DTR | CONTROL_RTS)
-
-#define BITS_DATA_8       0x0800  
-
 #define MAX_RECV_LINE 920
 
 static struct usb_device *smartinfrared_device;
@@ -40,11 +24,6 @@ static int usb_probe(struct usb_interface *ifce, const struct usb_device_id *id)
 static void usb_disconnect(struct usb_interface *ifce);
 static int usb_write_serial(const char *cmd);
 static int usb_read_serial(char *response, size_t size);
-static int cp210x_ifc_enable(struct usb_device *udev, u16 ifnum);
-static int cp210x_set_line_ctl(struct usb_device *udev, u16 ifnum, u16 line_ctl);
-static int cp210x_set_mhs(struct usb_device *udev, u16 ifnum, u16 control);
-static int cp210x_set_baudrate(struct usb_device *udev, u16 ifnum, u32 baud);
-
 
 static ssize_t attr_show(struct kobject *sys_obj, struct kobj_attribute *attr, char *buff);
 static ssize_t attr_store(struct kobject *sys_obj, struct kobj_attribute *attr, const char *buff, size_t count);
@@ -148,10 +127,6 @@ static int usb_read_serial(char *response, size_t size) {
         ret = usb_bulk_msg(smartinfrared_device, usb_rcvbulkpipe(smartinfrared_device, usb_in),
                            usb_in_buffer, usb_max_size, &actual_size, 3000);
 
-        if (actual_size == 0) {
-            printk(KERN_INFO "SmartInfrared: Nenhum dado recebido");
-            return -1;
-        }
         if (ret) {
             printk(KERN_ERR "SmartInfrared: Falha ao ler resposta. Código: %d\n", ret);
             return -1;
