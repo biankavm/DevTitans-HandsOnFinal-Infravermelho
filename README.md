@@ -4,13 +4,12 @@ Bem-vindo ao repositório da Equipe 03 no DevTITANS. Neste repositório apresent
 
 ## Contribuidores
 
-<img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Agata.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Bianka.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Mateus.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Fernanda.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Juan.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Jose.png" width="180" >
+<img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Agata.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Bianka.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Mateus.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Fernanda.png" width="180" > <img src="https://github.com/biankavm/DevTitans-HandsOnFinal-Infravermelho/blob/main/Imagens/Juan.png" width="180" > 
 
 
 - Ágata Brazão (Time de Protótipo e Firmware)
 - Bianka Vasconcelos (Time de Driver e HAL)
 - Fernanda Cabral (Time do Port para o G100)
-- José Inácio (Time de Driver e HAL)
 - Juan Veiga (Time de Protótipo e Firmware)
 - Mateus Pantoja (Time de Driver e HAL)
 
@@ -37,7 +36,6 @@ Para perguntas, sugestões ou feedback, entre em contato com um dos mantenedores
 - [Fernanda](example@example.com)
 - [Juan](example@example.com)
 - [Mateus](example@example.com)
-- [Jose](example@example.com)
 
 
 
